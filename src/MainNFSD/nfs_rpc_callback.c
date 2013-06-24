@@ -664,6 +664,7 @@ int nfs_rpc_create_chan_v41(nfs41_session_t *session,
 
 	for (i = 0; i < num_sec_parms; ++i) {
 		if (sec_parms[i].cb_secflavor == AUTH_NONE) {
+			chan->auth = authnone_ncreate();
 			authed = true;
 			break;
 		} else if (sec_parms[i].cb_secflavor == AUTH_SYS) {

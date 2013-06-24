@@ -1057,7 +1057,7 @@ clientid_status_t nfs_client_id_get(hash_table_t *ht,
 				     "%s NOTFOUND (assumed EXPIRED)",
 				     ht->parameter.ht_name);
 		*client_rec = NULL;
-		status = CLIENT_ID_EXPIRED;
+		status = CLIENT_ID_STALE;
 	}
 
 	return status;
