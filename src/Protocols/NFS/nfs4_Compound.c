@@ -525,14 +525,14 @@ int nfs4_Compound(nfs_arg_t *arg,
       res->res_compound4.tag.utf8string_val[res->res_compound4.tag.utf8string_len] = '\0';
 
       /* Check if the tag is a valid utf8 string */
-      status = path_filter(res->res_compound4.tag.utf8string_val,
-			   UTF8_SCAN_CKUTF8);
-      if(status != 0) {
-	status = NFS4ERR_INVAL;
-        res->res_compound4.status = status;
-        res->res_compound4.resarray.resarray_len = 0;
-        return NFS_REQ_OK;
-       }
+      //status = path_filter(res->res_compound4.tag.utf8string_val,
+      //			   UTF8_SCAN_CKUTF8);
+      //if(status != 0) {
+      //	status = NFS4ERR_INVAL;
+      //  res->res_compound4.status = status;
+      //  res->res_compound4.resarray.resarray_len = 0;
+      //  return NFS_REQ_OK;
+      // }
 
     }
   else
@@ -557,71 +557,82 @@ int nfs4_Compound(nfs_arg_t *arg,
 
   /* Manage errors NFS4ERR_OP_NOT_IN_SESSION and  NFS4ERR_NOT_ONLY_OP.
    * These checks apply only to 4.1 */
-  if(compound4_minor == 1 && argarray_len > 1) 
+  if(compound4_minor == 1)
     {
-
       if(argarray[0].argop != NFS4_OP_SEQUENCE &&
 	 argarray[0].argop != NFS4_OP_EXCHANGE_ID &&
 	 argarray[0].argop != NFS4_OP_CREATE_SESSION &&
 	 argarray[0].argop != NFS4_OP_DESTROY_SESSION &&
-	 argarray[0].argop != NFS4_OP_BIND_CONN_TO_SESSION)
+	 argarray[0].argop != NFS4_OP_BIND_CONN_TO_SESSION &&
+	 argarray[0].argop != NFS4_OP_DESTROY_CLIENTID)
 	{
 	  status = NFS4ERR_OP_NOT_IN_SESSION;
 	  res->res_compound4.status = status;
           res->res_compound4.resarray.resarray_len = 0;
           return NFS_REQ_OK;
         }
+      if(argarray_len > 1) 
+        {
 
       /* If not prepended by OP4_SEQUENCE, OP4_EXCHANGE_ID should be
        * the only request in the compound see 18.35.3. and test EID8
        * for details */
-      if(argarray[0].argop == NFS4_OP_EXCHANGE_ID)
-        {
-          status = NFS4ERR_NOT_ONLY_OP;
-          //resarray[0].nfs_resop4_u.opexchange_id.eir_status = status;
-          res->res_compound4.status = status;
-          res->res_compound4.resarray.resarray_len = 0;
-          return NFS_REQ_OK;
-        }
+          if(argarray[0].argop == NFS4_OP_EXCHANGE_ID)
+            {
+              status = NFS4ERR_NOT_ONLY_OP;
+              //resarray[0].nfs_resop4_u.opexchange_id.eir_status = status;
+              res->res_compound4.status = status;
+              res->res_compound4.resarray.resarray_len = 0;
+              return NFS_REQ_OK;
+            }
 
-      /* If not prepended bu OP4_SEQUENCE, OP4_CREATE_SESSION should
-       * be the only request in the compound see 18.36.3 and test CSESS23
-       * for details */
-      if(argarray[0].argop == NFS4_OP_CREATE_SESSION)
-        {
-          status = NFS4ERR_NOT_ONLY_OP;
-          res->res_compound4.status = status;
-	  res->res_compound4.resarray.resarray_len = 0;
-          return NFS_REQ_OK;
-        }
+          /* If not prepended bu OP4_SEQUENCE, OP4_CREATE_SESSION should
+           * be the only request in the compound see 18.36.3 and test CSESS23
+           * for details */
+          if(argarray[0].argop == NFS4_OP_CREATE_SESSION)
+            {
+              status = NFS4ERR_NOT_ONLY_OP;
+              res->res_compound4.status = status;
+	      res->res_compound4.resarray.resarray_len = 0;
+              return NFS_REQ_OK;
+            }
 
-      /* If the COMPOUND request does not start with SEQUENCE, and if
-       * DESTROY_SESSION is not the sole operation, then server MUST return
-       * NFS4ERR_NOT_ONLY_OP. See 18.37.3 and test DSESS9005 for details*/
-      if(argarray[0].argop == NFS4_OP_DESTROY_SESSION)
-        {
-          status = NFS4ERR_NOT_ONLY_OP;
-          res->res_compound4.status = status;
-	  res->res_compound4.resarray.resarray_len = 0;
-          return NFS_REQ_OK;
-        }
+          /* If the COMPOUND request does not start with SEQUENCE, and if
+           * DESTROY_SESSION is not the sole operation, then server MUST return
+           * NFS4ERR_NOT_ONLY_OP. See 18.37.3 and test DSESS9005 for details*/
+          if(argarray[0].argop == NFS4_OP_DESTROY_SESSION)
+            {
+              status = NFS4ERR_NOT_ONLY_OP;
+              res->res_compound4.status = status;
+	      res->res_compound4.resarray.resarray_len = 0;
+              return NFS_REQ_OK;
+            }
 
-      /*
-      if(argarray[0].argop != NFS4_OP_SEQUENCE)
-	{
-          // Is this an overhead?
-          for(i = 1; i < argarray_len; i++)
+          if(argarray[0].argop == NFS4_OP_DESTROY_CLIENTID)
+            {
+              status = NFS4ERR_NOT_ONLY_OP;
+              res->res_compound4.status = status;
+	      res->res_compound4.resarray.resarray_len = 0;
+              return NFS_REQ_OK;
+            }
+
+          /*
+          if(argarray[0].argop != NFS4_OP_SEQUENCE)
 	    {
-	      if(argarray[i].argop == NFS4_OP_DESTROY_SESSION)
-		{
-		  status = NFS4ERR_NOT_ONLY_OP;
-		  res->res_compound4.status = status;
-		  res->res_compound4.resarray.resarray_len = 0;
-		  return NFS_REQ_OK;
-		}
+              // Is this an overhead?
+              for(i = 1; i < argarray_len; i++)
+	        {
+	          if(argarray[i].argop == NFS4_OP_DESTROY_SESSION)
+		    {
+		      status = NFS4ERR_NOT_ONLY_OP;
+		      res->res_compound4.status = status;
+		      res->res_compound4.resarray.resarray_len = 0;
+		      return NFS_REQ_OK;
+		    }
+	        }
 	    }
-	}
 	*/
+        }
     }
 
    /* If the COMPOUND request starts with SEQUENCE, and if the sessionids

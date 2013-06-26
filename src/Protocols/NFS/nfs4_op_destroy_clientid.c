@@ -99,6 +99,7 @@ int nfs4_op_destroy_clientid(struct nfs_argop4 *op,
         /* ref +1 */
 	if (client_record == NULL) {
             /* Fine.  We're done. */
+	    res_DESTROY_CLIENTID4.dcr_status = NFS4ERR_STALE_CLIENTID; 
             goto out;
 	}
 
@@ -132,7 +133,7 @@ int nfs4_op_destroy_clientid(struct nfs_argop4 *op,
          * Since the minorversion is 4.1 or higher, this is equivalent to a
          * session check. */
         if (client_id_has_nfs41_sessions(found)) {
-                res_DESTROY_CLIENTID4.dcr_status = NFS4ERR_CLID_INUSE;
+                res_DESTROY_CLIENTID4.dcr_status = NFS4ERR_CLIENTID_BUSY;
                 goto cleanup;
         }
 
