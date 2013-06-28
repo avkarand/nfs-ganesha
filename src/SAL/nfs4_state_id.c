@@ -415,7 +415,7 @@ nfsstat4 nfs4_Check_Stateid(stateid4 *stateid,
            */
           return NFS4_OK;
         }
-      if(stateid->seqid == 1 && (flags & STATEID_SPECIAL_CURRENT) != 0)
+      else if(stateid->seqid == 1 && (flags & STATEID_SPECIAL_CURRENT) != 0)
         {
           /* Special current stateid */
           LogDebug(COMPONENT_STATE,
@@ -423,11 +423,13 @@ nfsstat4 nfs4_Check_Stateid(stateid4 *stateid,
           /* Copy current stateid in and proceed to checks */
           *stateid = data->current_stateid;
         }
-
-      LogDebug(COMPONENT_STATE,
-               "Check %s stateid with OTHER all zeros, seqid %u unexpected",
-               tag, (unsigned int) stateid->seqid);
-      return NFS4ERR_BAD_STATEID;
+      else
+        {
+          LogDebug(COMPONENT_STATE,
+                   "Check %s stateid with OTHER all zeros, seqid %u unexpected",
+                   tag, (unsigned int) stateid->seqid);
+          return NFS4ERR_BAD_STATEID;
+        }
     }
 
   /* Test for OTHER is all ones */
