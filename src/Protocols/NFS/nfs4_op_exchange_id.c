@@ -104,6 +104,19 @@ int nfs4_op_exchange_id(struct nfs_argop4 *op,
 		return (res_EXCHANGE_ID4->eir_status = NFS4ERR_INVAL);
 	}
 
+        /** The EXCHGID4_FLAG_CONFIRMED_R bit can only be set in eir_flags;
+          * it is always off in eia_flags
+          */
+        if (arg_EXCHANGE_ID4->eia_flags &&
+                (arg_EXCHANGE_ID4->eia_flags & EXCHGID4_FLAG_CONFIRMED_R) != 0) {
+                return (res_EXCHANGE_ID4->eir_status = NFS4ERR_INVAL);
+        }
+
+
+        if (arg_EXCHANGE_ID4->eia_flags && (arg_EXCHANGE_ID4->eia_flags & EXCHGID4_FLAG_VALID) == 0) {
+                return (res_EXCHANGE_ID4->eir_status = NFS4ERR_INVAL);
+        }
+
 	copy_xprt_addr(&client_addr, data->reqp->rq_xprt);
 
 	/**

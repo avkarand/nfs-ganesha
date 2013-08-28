@@ -2205,6 +2205,15 @@ extern "C"
 #define EXCHGID4_FLAG_MASK_PNFS 0x00070000
 #define EXCHGID4_FLAG_UPD_CONFIRMED_REC_A 0x40000000
 #define EXCHGID4_FLAG_CONFIRMED_R 0x80000000
+#define EXCHGID4_FLAG_VALID (EXCHGID4_FLAG_SUPP_MOVED_REFER |    \
+                             EXCHGID4_FLAG_SUPP_MOVED_MIGR |     \
+                             EXCHGID4_FLAG_BIND_PRINC_STATEID |  \
+                             EXCHGID4_FLAG_USE_NON_PNFS |        \
+                             EXCHGID4_FLAG_USE_PNFS_MDS |        \
+                             EXCHGID4_FLAG_USE_PNFS_DS |         \
+                             EXCHGID4_FLAG_MASK_PNFS |           \
+                             EXCHGID4_FLAG_UPD_CONFIRMED_REC_A | \
+                             EXCHGID4_FLAG_CONFIRMED_R)
 
   struct state_protect_ops4
   {
