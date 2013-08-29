@@ -90,6 +90,7 @@ int nfs4_op_create_session(struct nfs_argop4 *op,
 	/* Abbreviated alias for successful response */
 	CREATE_SESSION4resok *const res_CREATE_SESSION4ok
 		= &res_CREATE_SESSION4->CREATE_SESSION4res_u.csr_resok4;
+        int pos = 0;
 
 	if (isDebug(COMPONENT_SESSIONS))
 		component = COMPONENT_SESSIONS;
@@ -178,41 +179,88 @@ int nfs4_op_create_session(struct nfs_argop4 *op,
 
 	data->use_drc = false;
 
-	if (data->oppos == 0) {
-		/* Special case : the request is used without use of
-		   OP_SEQUENCE */
-		if ((arg_CREATE_SESSION4->csa_sequence + 1
-		     == found->cid_create_session_sequence)
-		    && (found->cid_create_session_slot.cache_used)) {
-			data->use_drc = true;
-			data->pcached_res =
-				&found->cid_create_session_slot
-				.cached_result;
+        if ((arg_CREATE_SESSION4->csa_sequence + 1
+             == found->cid_create_session_sequence)
+            && (found->cid_create_session_slot.cache_used)) {
+            if (data->oppos == 0) {
+                if (found->cid_create_session_slot.cached_result.res_compound4.resarray.resarray_len == 2) {
+                /* CREATE_SESSION is replayed without sequence */
 
-			res_CREATE_SESSION4->csr_status = NFS4_OK;
+                        res_CREATE_SESSION4ok->csr_sequence
+                                = arg_CREATE_SESSION4->csa_sequence;
 
-			dec_client_id_ref(found);
+                        /* return the input for wanting of something better (will
+                           change in later versions) */
+                        res_CREATE_SESSION4ok->csr_fore_chan_attrs
+                                = found->cid_create_session_slot.cached_result.res_compound4.resarray.resarray_val[1].nfs_resop4_u.opcreate_session.CREATE_SESSION4res_u.csr_resok4.csr_fore_chan_attrs;
+                        res_CREATE_SESSION4ok->csr_back_chan_attrs
+                                = found->cid_create_session_slot.cached_result.res_compound4.resarray.resarray_val[1].nfs_resop4_u.opcreate_session.CREATE_SESSION4res_u.csr_resok4.csr_back_chan_attrs;
+                        res_CREATE_SESSION4ok->csr_flags = 0;
 
-			LogDebug(component,
-				 "CREATE_SESSION replay=%p special case",
-				 data->pcached_res);
+                        memcpy(res_CREATE_SESSION4ok->csr_sessionid,
+                               found->cid_create_session_slot.cached_result.res_compound4.resarray.resarray_val[1].nfs_resop4_u.opcreate_session.CREATE_SESSION4res_u.csr_resok4.csr_sessionid,
+                               NFS4_SESSIONID_SIZE);
+                        res_CREATE_SESSION4->csr_status = NFS4_OK;
 
-			goto out;
-		} else if (arg_CREATE_SESSION4->csa_sequence !=
-			   found->cid_create_session_sequence) {
-			res_CREATE_SESSION4->csr_status
-				= NFS4ERR_SEQ_MISORDERED;
+                        dec_client_id_ref(found);
 
-			dec_client_id_ref(found);
+                        goto out;
+                } else {
 
-			LogDebug(component,
-				 "CREATE_SESSION returning "
-				 "NFS4ERR_SEQ_MISORDERED");
+                        data->use_drc = true;
+                        data->pcached_res =
+                                &found->cid_create_session_slot
+                                .cached_result;
 
-			goto out;
-		}
+                        res_CREATE_SESSION4->csr_status = NFS4_OK;
 
-	}
+                        dec_client_id_ref(found);
+
+                        LogDebug(component,
+                                 "CREATE_SESSION replay=%p special case",
+                                 data->pcached_res);
+
+                        goto out;
+                }
+            } else {
+                pos = (found->cid_create_session_slot.cached_result.res_compound4.resarray.resarray_len == 2) ? 1 : 0;
+
+                res_CREATE_SESSION4ok->csr_sequence
+                        = arg_CREATE_SESSION4->csa_sequence;
+
+                /* return the input for wanting of something better (will
+                   change in later versions) */
+                res_CREATE_SESSION4ok->csr_fore_chan_attrs
+                        = found->cid_create_session_slot.cached_result.res_compound4.resarray.resarray_val[pos].nfs_resop4_u.opcreate_session.CREATE_SESSION4res_u.csr_resok4.csr_fore_chan_attrs;
+                res_CREATE_SESSION4ok->csr_back_chan_attrs
+                        = found->cid_create_session_slot.cached_result.res_compound4.resarray.resarray_val[pos].nfs_resop4_u.opcreate_session.CREATE_SESSION4res_u.csr_resok4.csr_back_chan_attrs;
+                res_CREATE_SESSION4ok->csr_flags = 0;
+
+                memcpy(res_CREATE_SESSION4ok->csr_sessionid,
+                       found->cid_create_session_slot.cached_result.res_compound4.resarray.resarray_val[pos].nfs_resop4_u.opcreate_session.CREATE_SESSION4res_u.csr_resok4.csr_sessionid,
+                       NFS4_SESSIONID_SIZE);
+                res_CREATE_SESSION4->csr_status = NFS4_OK;
+
+                dec_client_id_ref(found);
+
+                goto out;
+
+            }
+        }
+
+        if (data->oppos == 0 && arg_CREATE_SESSION4->csa_sequence !=
+           found->cid_create_session_sequence) {
+                res_CREATE_SESSION4->csr_status
+                        = NFS4ERR_SEQ_MISORDERED;
+
+                dec_client_id_ref(found);
+
+                LogDebug(component,
+                         "CREATE_SESSION returning "
+                                 "NFS4ERR_SEQ_MISORDERED");
+
+                goto out;
+        }
 
 	if (unconf != NULL) {
 		/* First must match principal */
